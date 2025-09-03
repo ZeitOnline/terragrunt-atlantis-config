@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.25.0](https://github.com/ZeitOnline/terragrunt-atlantis-config/compare/v2.24.0...v2.25.0) (2025-09-03)
+
+
+### Features
+
+* improve test coverage ([3515b7b](https://github.com/ZeitOnline/terragrunt-atlantis-config/commit/3515b7b0d2a19746305f1abfb8003290fceb8050))
+
 ## [2.24.0](https://github.com/ZeitOnline/terragrunt-atlantis-config/compare/v2.23.1...v2.24.0) (2025-09-03)
 
 
