@@ -682,3 +682,260 @@ func TestWithDependsOn(t *testing.T) {
 		"--create-project-name",
 	})
 }
+
+// Test cache-related functions for coverage
+func TestCacheFunctions(t *testing.T) {
+	// Test newGetDependenciesCache
+	cache := newGetDependenciesCache()
+	assert.NotNil(t, cache, "Cache should not be nil")
+	assert.NotNil(t, cache.data, "Cache data should not be nil")
+
+	// Test cache set and get operations
+	testOutput := getDependenciesOutput{
+		dependencies: []string{"dep1", "dep2"},
+		err:          nil,
+	}
+
+	// Test set operation
+	cache.set("test-key", testOutput)
+
+	// Test get operation with existing key
+	result, found := cache.get("test-key")
+	assert.True(t, found, "Should find the key")
+	assert.Equal(t, testOutput.dependencies, result.dependencies, "Dependencies should match")
+	assert.Equal(t, testOutput.err, result.err, "Error should match")
+
+	// Test get operation with non-existing key
+	_, found = cache.get("non-existent-key")
+	assert.False(t, found, "Should not find non-existent key")
+
+	// Test cleanupCaches function
+	oldCache := getDependenciesCache
+	getDependenciesCache.set("cleanup-test", testOutput)
+
+	cleanupCaches()
+
+	// After cleanup, cache should be reset
+	_, found = getDependenciesCache.get("cleanup-test")
+	assert.False(t, found, "Cache should be cleared after cleanup")
+
+	// Restore original cache
+	getDependenciesCache = oldCache
+}
+
+// Test uniqueStrings function
+func TestUniqueStringsDetailed(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []string
+		expected []string
+	}{
+		{
+			name:     "empty slice",
+			input:    []string{},
+			expected: []string{},
+		},
+		{
+			name:     "nil slice",
+			input:    nil,
+			expected: nil,
+		},
+		{
+			name:     "single element",
+			input:    []string{"a"},
+			expected: []string{"a"},
+		},
+		{
+			name:     "no duplicates",
+			input:    []string{"a", "b", "c"},
+			expected: []string{"a", "b", "c"},
+		},
+		{
+			name:     "with duplicates",
+			input:    []string{"a", "b", "a", "c", "b"},
+			expected: []string{"a", "b", "c"},
+		},
+		{
+			name:     "all same elements",
+			input:    []string{"x", "x", "x"},
+			expected: []string{"x"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := uniqueStrings(tt.input)
+			if tt.input == nil {
+				assert.Nil(t, result, "Result should be nil for nil input")
+				return
+			}
+
+			// Check length
+			assert.Len(t, result, len(tt.expected), "Result length should match expected")
+
+			// Check that all expected elements are present
+			for _, expected := range tt.expected {
+				assert.Contains(t, result, expected, "Result should contain expected element")
+			}
+
+			// Check that there are no duplicates in result
+			seen := make(map[string]bool)
+			for _, item := range result {
+				assert.False(t, seen[item], "Result should not contain duplicates")
+				seen[item] = true
+			}
+		})
+	}
+}
+
+func TestLookupProjectHcl(t *testing.T) {
+	tests := []struct {
+		name     string
+		m        map[string][]string
+		value    string
+		expected string
+	}{
+		{
+			name: "value found in first key",
+			m: map[string][]string{
+				"project1": {"path1", "path2"},
+				"project2": {"path3", "path4"},
+			},
+			value:    "path1",
+			expected: "project1",
+		},
+		{
+			name: "value found in second key",
+			m: map[string][]string{
+				"project1": {"path1", "path2"},
+				"project2": {"path3", "path4"},
+			},
+			value:    "path3",
+			expected: "project2",
+		},
+		{
+			name: "value not found",
+			m: map[string][]string{
+				"project1": {"path1", "path2"},
+				"project2": {"path3", "path4"},
+			},
+			value:    "path5",
+			expected: "",
+		},
+		{
+			name:     "empty map",
+			m:        map[string][]string{},
+			value:    "path1",
+			expected: "",
+		},
+		{
+			name: "empty value",
+			m: map[string][]string{
+				"project1": {"path1", ""},
+				"project2": {"path2", "path3"},
+			},
+			value:    "",
+			expected: "project1",
+		},
+		{
+			name: "multiple occurrences - returns one of them",
+			m: map[string][]string{
+				"project1": {"path1", "path2"},
+				"project2": {"path1", "path3"}, // path1 appears in both
+			},
+			value: "path1",
+			// Since map iteration order is not guaranteed in Go,
+			// we can't predict which key will be returned first
+			// Just verify that one of the valid keys is returned
+			expected: "", // We'll check this differently
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := lookupProjectHcl(tt.m, tt.value)
+			if tt.name == "multiple occurrences - returns one of them" {
+				// Special case: map iteration order is not guaranteed
+				// Just verify that a valid key is returned
+				assert.Contains(t, []string{"project1", "project2"}, result)
+			} else {
+				assert.Equal(t, tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestSliceUnion(t *testing.T) {
+	tests := []struct {
+		name     string
+		a        []string
+		b        []string
+		expected []string
+	}{
+		{
+			name:     "both slices empty",
+			a:        []string{},
+			b:        []string{},
+			expected: []string{},
+		},
+		{
+			name:     "first slice empty",
+			a:        []string{},
+			b:        []string{"b1", "b2"},
+			expected: []string{"b1", "b2"},
+		},
+		{
+			name:     "second slice empty",
+			a:        []string{"a1", "a2"},
+			b:        []string{},
+			expected: []string{"a1", "a2"},
+		},
+		{
+			name:     "no overlap",
+			a:        []string{"a1", "a2"},
+			b:        []string{"b1", "b2"},
+			expected: []string{"a1", "a2", "b1", "b2"},
+		},
+		{
+			name:     "complete overlap",
+			a:        []string{"a1", "a2"},
+			b:        []string{"a1", "a2"},
+			expected: []string{"a1", "a2"},
+		},
+		{
+			name:     "partial overlap",
+			a:        []string{"a1", "a2", "a3"},
+			b:        []string{"a2", "a3", "b1"},
+			expected: []string{"a1", "a2", "a3", "b1"},
+		},
+		{
+			name:     "nil slices",
+			a:        nil,
+			b:        nil,
+			expected: nil,
+		},
+		{
+			name:     "first nil",
+			a:        nil,
+			b:        []string{"b1", "b2"},
+			expected: []string{"b1", "b2"},
+		},
+		{
+			name:     "second nil",
+			a:        []string{"a1", "a2"},
+			b:        nil,
+			expected: []string{"a1", "a2"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := sliceUnion(tt.a, tt.b)
+			if tt.expected == nil {
+				assert.Nil(t, result)
+			} else {
+				assert.Equal(t, tt.expected, result)
+			}
+		})
+	}
+}
