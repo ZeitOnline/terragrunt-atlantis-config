@@ -12,12 +12,15 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-var localModuleSourcePrefixes = []string{
-	"./",
-	"../",
-	".\\",
-	"..\\",
-}
+var (
+	// Unix-style relative path prefixes
+	unixLocalModulePrefixes = []string{"./", "../"}
+	// Windows-style relative path prefixes
+	windowsLocalModulePrefixes = []string{".\\", "..\\"}
+)
+
+// localModuleSourcePrefixes contains all platform-specific prefixes for local module sources
+var localModuleSourcePrefixes = append(unixLocalModulePrefixes, windowsLocalModulePrefixes...)
 
 func parseTerraformLocalModuleSource(path string) ([]string, error) {
 	moduleCallSources, err := extractModuleCallSources(path)
@@ -25,7 +28,7 @@ func parseTerraformLocalModuleSource(path string) ([]string, error) {
 		return nil, err
 	}
 
-	var sourceMap = map[string]bool{}
+	var sourceMap = make(map[string]struct{})
 	for _, source := range moduleCallSources {
 		if isLocalTerraformModuleSource(source) {
 			modulePath := util.JoinPath(path, source)
@@ -33,12 +36,8 @@ func parseTerraformLocalModuleSource(path string) ([]string, error) {
 			modulePathGlobTf := util.JoinPath(modulePath, "*.tf*")
 			modulePathGlobTofu := util.JoinPath(modulePath, "*.tofu*")
 
-			if _, exists := sourceMap[modulePathGlobTf]; !exists {
-				sourceMap[modulePathGlobTf] = true
-			}
-			if _, exists := sourceMap[modulePathGlobTofu]; !exists {
-				sourceMap[modulePathGlobTofu] = true
-			}
+			sourceMap[modulePathGlobTf] = struct{}{}
+			sourceMap[modulePathGlobTofu] = struct{}{}
 
 			// find local module source recursively
 			subSources, err := parseTerraformLocalModuleSource(modulePath)
@@ -47,7 +46,7 @@ func parseTerraformLocalModuleSource(path string) ([]string, error) {
 			}
 
 			for _, subSource := range subSources {
-				sourceMap[subSource] = true
+				sourceMap[subSource] = struct{}{}
 			}
 		}
 	}
@@ -64,34 +63,28 @@ func parseTerraformLocalModuleSource(path string) ([]string, error) {
 func extractModuleCallSources(dir string) ([]string, error) {
 	var sources []string
 
-	// Find all .tf, .tf.json, .tofu, and .tofu.json files
-	files, err := filepath.Glob(filepath.Join(dir, "*.tf"))
-	if err != nil {
-		return nil, err
-	}
-	jsonFiles, err := filepath.Glob(filepath.Join(dir, "*.tf.json"))
-	if err != nil {
-		return nil, err
-	}
-	tofuFiles, err := filepath.Glob(filepath.Join(dir, "*.tofu"))
-	if err != nil {
-		return nil, err
-	}
-	tofuJsonFiles, err := filepath.Glob(filepath.Join(dir, "*.tofu.json"))
-	if err != nil {
-		return nil, err
-	}
+	// File patterns to search for
+	patterns := []string{"*.tf", "*.tf.json", "*.tofu", "*.tofu.json"}
+	var files []string
 
-	files = append(files, jsonFiles...)
-	files = append(files, tofuFiles...)
-	files = append(files, tofuJsonFiles...)
+	// Collect all matching files
+	for _, pattern := range patterns {
+		matches, err := filepath.Glob(filepath.Join(dir, pattern))
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, matches...)
+	}
 
 	parser := hclparse.NewParser()
 
 	for _, file := range files {
 		content, err := os.ReadFile(file)
 		if err != nil {
-			continue // Skip files we can't read
+			// Log skipped files for debugging
+			logger := createLogger()
+			logger.Debugf("Skipping unreadable file %s: %v", file, err)
+			continue
 		}
 
 		var f *hcl.File
@@ -104,7 +97,10 @@ func extractModuleCallSources(dir string) ([]string, error) {
 		}
 
 		if diags.HasErrors() {
-			continue // Skip files with parse errors
+			// Log parse errors for debugging
+			logger := createLogger()
+			logger.Debugf("Skipping file with parse errors %s: %v", file, diags)
+			continue
 		}
 
 		// Extract module calls from the parsed file

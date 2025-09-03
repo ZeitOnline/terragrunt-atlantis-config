@@ -16,6 +16,14 @@ import (
 	"github.com/hashicorp/hcl/v2"
 )
 
+const (
+	// Environment variable separator
+	envVarSeparator = "="
+
+	// Root configuration file name
+	rootConfigFileName = "root.hcl"
+)
+
 type parsedHcl struct {
 	Terraform *config.TerraformConfig `hcl:"terraform,block"`
 	Includes  []config.IncludeConfig  `hcl:"include,block"`
@@ -37,17 +45,19 @@ type IntegrationTerragruntConfig struct {
 	*config.TerragruntConfig
 }
 
-// Parse env vars into a map
-func getEnvs() map[string]string {
+// parseEnvironmentVariables parses environment variables into a map
+func parseEnvironmentVariables() map[string]string {
 	envs := os.Environ()
-	m := make(map[string]string)
+	envMap := make(map[string]string)
 
 	for _, env := range envs {
-		results := strings.SplitN(env, "=", 2)
-		m[results[0]] = results[1]
+		results := strings.SplitN(env, envVarSeparator, 2)
+		if len(results) == 2 {
+			envMap[results[0]] = results[1]
+		}
 	}
 
-	return m
+	return envMap
 }
 
 // createLogger creates a logger with proper formatter to avoid nil pointer dereference
@@ -63,7 +73,7 @@ func NewParsingContextWithConfigPath(ctx context.Context, terragruntConfigPath s
 		return nil, err
 	}
 	opt.OriginalTerragruntConfigPath = terragruntConfigPath
-	opt.Env = getEnvs()
+	opt.Env = parseEnvironmentVariables()
 
 	logger := createLogger()
 
@@ -183,7 +193,7 @@ func FindConfigFilesInPath(rootPath string, opts *options.TerragruntOptions) ([]
 			return nil
 		}
 
-		for _, configFile := range []string{"root.hcl"} {
+		for _, configFile := range []string{rootConfigFileName} {
 			if !filepath.IsAbs(configFile) {
 				configFile = util.JoinPath(path, configFile)
 			}

@@ -13,10 +13,13 @@ import (
 	"github.com/hashicorp/hcl/v2/hclwrite"
 )
 
-const bareIncludeKey = ""
+const (
+	bareIncludeKey    = ""
+	jsonFileExtension = ".json"
+)
 
 // updateBareIncludeBlock searches the parsed terragrunt contents for a bare include block (include without a label),
-// and convert it to one with empty string as the label. This is necessary because the hcl parser is strictly enforces
+// and convert it to one with empty string as the label. This is necessary because the hcl parser strictly enforces
 // label counts when parsing out labels with a go struct.
 //
 // Returns the updated contents, a boolean indicated whether anything changed, and an error (if any).
@@ -62,7 +65,7 @@ func decodeHcl(
 
 	// Check if we need to update the file to label any bare include blocks.
 	// Excluding json because of https://github.com/transcend-io/terragrunt-atlantis-config/issues/244.
-	if filepath.Ext(filename) != ".json" {
+	if filepath.Ext(filename) != jsonFileExtension {
 		updatedBytes, isUpdated, err := updateBareIncludeBlock(file, filename)
 		if err != nil {
 			return err
@@ -94,11 +97,11 @@ func decodeHcl(
 	return nil
 }
 
-// This decodes only the `include` blocks of a terragrunt config, so its value can be used while decoding the rest of
+// extractIncludeConfigs decodes only the `include` blocks of a terragrunt config, so its value can be used while decoding the rest of
 // the config.
 // For consistency, `include` in the call to `decodeHcl` is always assumed to be nil. Either it really is nil (parsing
 // the child config), or it shouldn't be used anyway (the parent config shouldn't have an include block).
-func decodeAsTerragruntInclude(
+func extractIncludeConfigs(
 	ctx *TerragruntParsingContext,
 	file *hcl.File,
 	filename string,
@@ -128,7 +131,7 @@ func parseModule(ctx *TerragruntParsingContext, path string) (isParent bool, inc
 		return false, nil, err
 	}
 
-	terragruntIncludeList, err := decodeAsTerragruntInclude(ctx, file, path)
+	terragruntIncludeList, err := extractIncludeConfigs(ctx, file, path)
 	if err != nil {
 		return false, nil, err
 	}
@@ -141,7 +144,11 @@ func parseModule(ctx *TerragruntParsingContext, path string) (isParent bool, inc
 	// We don't need to check the errors/diagnostics coming from `decodeHcl`, as when errors come up,
 	// it will leave the partially parsed result in the output object.
 	var parsed parsedHcl
-	_ = decodeHcl(ctx, file, path, &parsed)
+	if err := decodeHcl(ctx, file, path, &parsed); err != nil {
+		// Log the error for debugging but continue with partial parsing
+		var logger log.Logger = createLogger()
+		logger.Debugf("Failed to fully parse %s: %v", path, err)
+	}
 
 	// If the file does not define a terraform source block, it is likely a parent (though not guaranteed)
 	if parsed.Terraform == nil || parsed.Terraform.Source == nil {
