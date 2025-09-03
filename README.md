@@ -187,7 +187,7 @@ However, there is one exception where the values are merged, which is the `atlan
 
 ## Local Installation and Usage
 
-You can install this tool locally to checkout what kinds of config it will generate for your repo, though in production it is recommended to [install this tool directly onto your Atlantis server](##integrate-into-your-atlantis-server)
+You can install this tool locally to checkout what kinds of config it will generate for your repo, though in production it is recommended to [install this tool directly onto your Atlantis server](#integrate-into-your-atlantis-server)
 
 Recommended: Install any version via go install:
 
@@ -195,8 +195,8 @@ Recommended: Install any version via go install:
 go install github.com/transcend-io/terragrunt-atlantis-config@v1.17.9
 ```
 
-This module officially supports golang version v1.21, tested on Github with each build. 
-This module also officially supports both Windows and Nix-based file formats, tested on Github with each build. 
+This module officially supports golang version v1.21, tested on Github with each build.
+This module also officially supports both Windows and Nix-based file formats, tested on Github with each build.
 
 Usage Examples (see below sections for all options):
 
@@ -213,21 +213,122 @@ terragrunt-atlantis-config generate --autoplan --output ./atlantis.yaml
 
 Finally, check the log output (or your output file) for the YAML.
 
-## Contributing
+## Development and Building
 
-To test any changes you've made, run `make gotestsum` (or `make test` for standard golang testing).
+This project uses [GoReleaser](https://goreleaser.com/) for building and releasing. All build tasks are handled through GoReleaser instead of traditional Makefiles.
 
-When your PR is merged and a tag is created, a Github Actions job to build the new binary, test it, and deploy it's artifacts to Github Releases along with checksums.
+### Prerequisites
 
-You can then open a PR on our homebrew tap similar to https://github.com/transcend-io/homebrew-tap/pull/4, and as soon as that merges your code will be released. Homebrew is not updated for every release, as Github is the primary artifact store.
+1. Install [GoReleaser](https://goreleaser.com/install/)
+2. Ensure you have Go 1.21+ installed
 
-## Contributors
+### Local Development
 
-<img src="./CONTRIBUTORS.svg">
+The project includes a minimal Makefile for convenience, with all heavy lifting delegated to GoReleaser:
 
-## Stargazers over time
+```bash
+# Using Makefile (recommended for development)
+make test      # Run tests only
+make build     # Run tests + build for current platform
+make build-all # Run tests + build for all platforms
+make clean     # Clean build artifacts
+make help      # Show all available commands
 
-[![Stargazers over time](https://starchart.cc/transcend-io/terragrunt-atlantis-config.svg)](https://starchart.cc/transcend-io/terragrunt-atlantis-config)
+# Using Go directly (manual approach)
+mkdir -p cmd/test_artifacts && go test -v ./... && rm -rf cmd/test_artifacts
+
+# Using GoReleaser directly
+goreleaser build --snapshot --clean --single-target  # Tests + build current platform
+goreleaser build --snapshot --clean                  # Tests + build all platforms
+```
+
+### Creating Releases
+
+This project uses [release-please](https://github.com/googleapis/release-please) for automated release management, starting from the current version (v2.23.1).
+
+#### Initial Setup
+
+Release-please is configured to:
+
+- Auto-detect the latest Git tag (v2.23.1) as the starting point
+- Use the `.release-please-manifest.json` file to track versions
+- Maintain `CHANGELOG.md` automatically
+- Follow semantic versioning based on conventional commits
+
+#### How Releases Work
+
+1. **Development**: Make your changes on a feature branch and create pull requests using [Conventional Commits](https://www.conventionalcommits.org/):
+
+   ```bash
+   git checkout -b feature/my-feature
+   git commit -m "feat: add new functionality"
+   git commit -m "fix: resolve issue with parsing"
+   git commit -m "chore: update dependencies"
+   git push origin feature/my-feature
+   # Create pull request to main branch
+   ```
+
+2. **Merge to Main**: After code review and approval, merge your pull request to `main`
+
+3. **Automatic Release PR**: release-please automatically creates/updates a release PR that:
+   - Updates the version in relevant files
+   - Generates/updates CHANGELOG.md
+   - Prepares the release
+
+4. **Release**: When you merge the release PR:
+   - release-please creates a Git tag
+   - GoReleaser automatically builds and publishes the release
+   - GitHub release is created with binaries and checksums
+
+#### Manual Release (if needed)
+
+```bash
+# Create and push a tag manually
+git tag -a v2.24.0 -m "Release v2.24.0"
+git push origin v2.24.0
+
+# GoReleaser will automatically handle the rest via GitHub Actions
+```
+
+#### Commit Message Format
+
+Use conventional commits for automatic changelog generation:
+
+- `feat:` - New features (minor version bump)
+- `fix:` - Bug fixes (patch version bump)
+- `chore:` - Maintenance tasks (no version bump)
+- `docs:` - Documentation changes (no version bump)
+- `BREAKING CHANGE:` - Breaking changes (major version bump)
+
+### Build Configuration
+
+The project uses a hybrid approach combining the convenience of Make with the power of GoReleaser:
+
+**Makefile**: Provides familiar commands (`make test`, `make build`) that delegate to GoReleaser
+**GoReleaser** (`.goreleaser.yaml`): Handles the actual building with:
+
+- Cross-platform builds for Linux, macOS, and Windows
+- Support for amd64 and arm64 architectures
+- Automatic version injection via `-ldflags`
+- Archive generation with checksums
+- GitHub release automation
+- Automatic testing before builds
+
+**GitHub Actions**: Automates the entire process:
+
+- `publish.yaml`: Triggered on tags, runs GoReleaser to build and publish releases
+- `release.yaml`: Uses release-please for automated release management
+- `run_tests.yml`: Runs tests on every push/PR
+
+### Installation from Source
+
+```bash
+# Install latest from main branch
+go install github.com/ZeitOnline/terragrunt-atlantis-config@main
+
+# Install specific version
+go install github.com/ZeitOnline/terragrunt-atlantis-config@v2.23.0
+```
 
 ## License
 

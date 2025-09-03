@@ -1,0 +1,62 @@
+version: 2
+project_name: terragrunt-atlantis-config
+
+# Clean up before building
+before:
+  hooks:
+    - go mod tidy
+    - mkdir -p cmd/test_artifacts
+    - go test -v ./...
+    - rm -rf cmd/test_artifacts
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+      - -mod=readonly
+      - -modcacherw
+    ldflags:
+      - -s -w -X main.VERSION={{.Version}}
+    binary: terragrunt-atlantis-config
+    dir: .
+    main: ./main.go
+
+archives:
+  - id: archives
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
+  algorithm: sha256
+
+release:
+  github:
+    owner: ZeitOnline
+    name: terragrunt-atlantis-config
+  prerelease: auto
+  draft: false
+
+# For local development builds (equivalent to 'make build')
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+# Generate changelog
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - typo

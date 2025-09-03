@@ -25,4 +25,3 @@ dependency "vpc" {
 inputs = {
   name           = "test_zone_${local.env}"
 }
-

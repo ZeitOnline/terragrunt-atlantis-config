@@ -1,0 +1,20 @@
+# Markdownlint configuration
+# See https://github.com/DavidAnson/markdownlint for rule details
+
+# Disable line length check for documentation
+MD013: false
+
+# Allow inline HTML for README formatting
+MD033: false
+
+# Allow first line to not be a heading (for badges, etc.)
+MD041: false
+
+# Allow duplicate headings (common in changelogs)
+MD024: false
+
+# Allow fenced code blocks without language (for generic examples)
+MD040: false
+
+# Allow invalid link fragments (may be valid in context)
+MD051: false

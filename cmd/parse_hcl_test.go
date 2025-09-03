@@ -256,11 +256,11 @@ terraform {
 
 func TestExtractIncludeConfigs(t *testing.T) {
 	tests := []struct {
-		name            string
-		input           string
-		expectedCount   int
-		expectedLabels  []string
-		shouldError     bool
+		name           string
+		input          string
+		expectedCount  int
+		expectedLabels []string
+		shouldError    bool
 	}{
 		{
 			name: "single bare include",
@@ -386,11 +386,11 @@ terraform {
 
 func TestParseModule(t *testing.T) {
 	tests := []struct {
-		name                string
-		content             string
-		expectedIsParent    bool
+		name                 string
+		content              string
+		expectedIsParent     bool
 		expectedIncludeCount int
-		shouldError         bool
+		shouldError          bool
 	}{
 		{
 			name: "child module with include",
@@ -505,9 +505,9 @@ terraform {
 func TestParseModuleWithRealFiles(t *testing.T) {
 	// Test with actual example files from the test_examples directory
 	tests := []struct {
-		name                string
-		examplePath         string
-		expectedIsParent    bool
+		name                 string
+		examplePath          string
+		expectedIsParent     bool
 		expectedIncludeCount int
 	}{
 		{
@@ -534,7 +534,7 @@ func TestParseModuleWithRealFiles(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Get the full path to the test example
 			testFilePath := filepath.Join("../test_examples", tt.examplePath)
-			
+
 			// Check if the file exists (skip test if not)
 			if _, err := os.Stat(testFilePath); os.IsNotExist(err) {
 				t.Skipf("Test file %s does not exist", testFilePath)
@@ -583,7 +583,7 @@ terraform {
 	// This should work without panics
 	var parsed parsedHcl
 	err = decodeHcl(ctx, file, testFile, &parsed)
-	
+
 	// We expect no error for this simple case
 	assert.NoError(t, err)
 	assert.NotNil(t, parsed.Terraform)
@@ -620,7 +620,7 @@ func TestExtractIncludeConfigsWithJSON(t *testing.T) {
 
 	// Extract include configs
 	includes, err := extractIncludeConfigs(ctx, file, testFile)
-	
+
 	// JSON parsing might have different behavior, just ensure it doesn't crash
 	t.Logf("JSON parsing result: includes=%d, error=%v", len(includes), err)
 }
@@ -660,11 +660,11 @@ terraform {
 	require.NotNil(t, file2)
 
 	// Cache hit should be significantly faster (at least 50% faster)
-	assert.True(t, secondCallDuration < firstCallDuration/2, 
-		"Second call (%v) should be significantly faster than first call (%v)", 
+	assert.True(t, secondCallDuration < firstCallDuration/2,
+		"Second call (%v) should be significantly faster than first call (%v)",
 		secondCallDuration, firstCallDuration)
 
-	t.Logf("First call: %v, Second call: %v (%.1fx faster)", 
-		firstCallDuration, secondCallDuration, 
+	t.Logf("First call: %v, Second call: %v (%.1fx faster)",
+		firstCallDuration, secondCallDuration,
 		float64(firstCallDuration)/float64(secondCallDuration))
 }

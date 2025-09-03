@@ -22,11 +22,7 @@ features of Terragrunt used in this folder organization.
 Note: This code is solely for demonstration purposes. This is not production-ready code, so use at your own risk. If
 you are interested in battle-tested, production-ready Terraform code, check out [Gruntwork](http://www.gruntwork.io/).
 
-
-
-
 ## How do you deploy the infrastructure in this repo?
-
 
 ### Pre-requisites
 
@@ -41,7 +37,6 @@ you are interested in battle-tested, production-ready Terraform code, check out 
    mechanisms](https://www.terraform.io/docs/providers/aws/#authentication).
 1. Fill in your AWS Account ID's in `prod/account.hcl` and `non-prod/account.hcl`.
 
-
 ### Deploying a single module
 
 1. `cd` into the module's folder (e.g. `cd non-prod/us-east-1/qa/mysql`).
@@ -50,14 +45,12 @@ you are interested in battle-tested, production-ready Terraform code, check out 
 1. Run `terragrunt plan` to see the changes you're about to apply.
 1. If the plan looks good, run `terragrunt apply`.
 
-
 ### Deploying all modules in a region
 
 1. `cd` into the region folder (e.g. `cd non-prod/us-east-1`).
 1. Configure the password for the MySQL DB as an environment variable: `export TF_VAR_master_password=(...)`.
 1. Run `terragrunt plan-all` to see all the changes you're about to apply.
 1. If the plan looks good, run `terragrunt apply-all`.
-
 
 ### Testing the infrastructure after it's deployed
 
@@ -98,11 +91,6 @@ You can use the `endpoint` and `db_name` outputs with any MySQL client:
 ```
 mysql --host=terraform-1234567890.abcdefghijklmonp.us-east-1.rds.amazonaws.com:3306 --user=admin --password mysql_prod
 ```
-
-
-
-
-
 
 ## How is the code in this repo organized?
 

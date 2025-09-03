@@ -5,6 +5,8 @@
 *.code-workspace
 build
 test_artifacts
+terragrunt-atlantis-config
+dist/
 
 # IDEs
 .vscode
