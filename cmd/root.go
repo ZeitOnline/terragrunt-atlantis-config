@@ -31,14 +31,14 @@ func Execute(version string) {
 
 	// Setup graceful shutdown with signal handling
 	appContext, cancelFunc = context.WithCancel(context.Background())
-	
+
 	// Setup signal handling for graceful shutdown
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	
+
 	go func() {
 		<-sigChan
-		cancelFunc() // Cancel the context to signal shutdown
+		cancelFunc()    // Cancel the context to signal shutdown
 		cleanupCaches() // Clean up all caches
 	}()
 

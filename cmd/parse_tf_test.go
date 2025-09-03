@@ -24,13 +24,13 @@ func TestParseTerraformLocalModuleSource_TofuFiles(t *testing.T) {
 	tofuContent := `
 module "vpc" {
   source = "./modules/vpc"
-  
+
   cidr = "10.0.0.0/16"
 }
 
 module "eks" {
   source = "../shared/eks"
-  
+
   vpc_id = module.vpc.id
 }
 
@@ -101,7 +101,7 @@ module "remote" {
 	for _, moduleDir := range expectedModules {
 		tfPattern := filepath.Join(moduleDir, "*.tf*")
 		tofuPattern := filepath.Join(moduleDir, "*.tofu*")
-		
+
 		assert.Contains(t, sources, tfPattern, "Should contain %s", tfPattern)
 		assert.Contains(t, sources, tofuPattern, "Should contain %s", tofuPattern)
 	}
@@ -152,10 +152,10 @@ module "relative_module" {
 
 	// Should find sources from all files
 	t.Logf("Found sources: %v", sources)
-	
+
 	// Should include sources from .tofu, .tf, and .tofu.json files
 	expectedSources := []string{"./local", "../relative", "./json-module"}
-	
+
 	// Since we have both .tf and .tofu with same content, we'll get duplicates
 	// Let's just check that all expected sources are found
 	for _, expected := range expectedSources {

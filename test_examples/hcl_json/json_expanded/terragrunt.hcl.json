@@ -7,7 +7,7 @@
         }
       ]
     }
-  ],  
+  ],
   "terraform": [
       {
         "source": "git::https://github.com/"

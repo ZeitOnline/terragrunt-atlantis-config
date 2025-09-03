@@ -187,7 +187,7 @@ However, there is one exception where the values are merged, which is the `atlan
 
 ## Local Installation and Usage
 
-You can install this tool locally to checkout what kinds of config it will generate for your repo, though in production it is recommended to [install this tool directly onto your Atlantis server](##integrate-into-your-atlantis-server)
+You can install this tool locally to checkout what kinds of config it will generate for your repo, though in production it is recommended to [install this tool directly onto your Atlantis server](#integrate-into-your-atlantis-server)
 
 Recommended: Install any version via go install:
 
@@ -195,8 +195,8 @@ Recommended: Install any version via go install:
 go install github.com/transcend-io/terragrunt-atlantis-config@v1.17.9
 ```
 
-This module officially supports golang version v1.21, tested on Github with each build. 
-This module also officially supports both Windows and Nix-based file formats, tested on Github with each build. 
+This module officially supports golang version v1.21, tested on Github with each build.
+This module also officially supports both Windows and Nix-based file formats, tested on Github with each build.
 
 Usage Examples (see below sections for all options):
 
@@ -229,7 +229,7 @@ The project includes a minimal Makefile for convenience, with all heavy lifting 
 ```bash
 # Using Makefile (recommended for development)
 make test      # Run tests only
-make build     # Run tests + build for current platform  
+make build     # Run tests + build for current platform
 make build-all # Run tests + build for all platforms
 make clean     # Clean build artifacts
 make help      # Show all available commands
@@ -249,6 +249,7 @@ This project uses [release-please](https://github.com/googleapis/release-please)
 #### Initial Setup
 
 Release-please is configured to:
+
 - Auto-detect the latest Git tag (v2.23.1) as the starting point
 - Use the `.release-please-manifest.json` file to track versions
 - Maintain `CHANGELOG.md` automatically
@@ -257,10 +258,11 @@ Release-please is configured to:
 #### How Releases Work
 
 1. **Development**: Make your changes on a feature branch and create pull requests using [Conventional Commits](https://www.conventionalcommits.org/):
+
    ```bash
    git checkout -b feature/my-feature
    git commit -m "feat: add new functionality"
-   git commit -m "fix: resolve issue with parsing"  
+   git commit -m "fix: resolve issue with parsing"
    git commit -m "chore: update dependencies"
    git push origin feature/my-feature
    # Create pull request to main branch
@@ -291,8 +293,9 @@ git push origin v2.24.0
 #### Commit Message Format
 
 Use conventional commits for automatic changelog generation:
+
 - `feat:` - New features (minor version bump)
-- `fix:` - Bug fixes (patch version bump)  
+- `fix:` - Bug fixes (patch version bump)
 - `chore:` - Maintenance tasks (no version bump)
 - `docs:` - Documentation changes (no version bump)
 - `BREAKING CHANGE:` - Breaking changes (major version bump)
@@ -305,7 +308,7 @@ The project uses a hybrid approach combining the convenience of Make with the po
 **GoReleaser** (`.goreleaser.yaml`): Handles the actual building with:
 
 - Cross-platform builds for Linux, macOS, and Windows
-- Support for amd64 and arm64 architectures  
+- Support for amd64 and arm64 architectures
 - Automatic version injection via `-ldflags`
 - Archive generation with checksums
 - GitHub release automation

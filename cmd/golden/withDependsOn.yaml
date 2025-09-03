@@ -46,4 +46,4 @@ projects:
   - dependency
   dir: depender_on_depender/nested
   name: depender_on_depender_nested
-version: 3 
+version: 3
