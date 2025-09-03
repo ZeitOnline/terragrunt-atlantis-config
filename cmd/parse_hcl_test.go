@@ -10,6 +10,7 @@ import (
 	"github.com/gruntwork-io/terragrunt/config/hclparse"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/zclconf/go-cty/cty"
 )
 
 func TestUpdateBareIncludeBlock(t *testing.T) {
@@ -667,4 +668,114 @@ terraform {
 	t.Logf("First call: %v, Second call: %v (%.1fx faster)",
 		firstCallDuration, secondCallDuration,
 		float64(firstCallDuration)/float64(secondCallDuration))
+}
+
+// Test HCL parser pool functions
+func TestHCLParserPool(t *testing.T) {
+	// Test getting a parser from the pool
+	parser := getHCLParser()
+	assert.NotNil(t, parser, "Parser should not be nil")
+
+	// Put it back - this should not panic
+	putHCLParser(parser)
+
+	// Get another parser - should work fine
+	parser2 := getHCLParser()
+	assert.NotNil(t, parser2, "Second parser should not be nil")
+}
+
+// Test parseHclWithCache function
+func TestParseHclWithCacheFunction(t *testing.T) {
+	// Create a temporary file
+	tempDir := t.TempDir()
+	testFile := filepath.Join(tempDir, "test.hcl")
+
+	content := `
+terraform {
+  source = "git::git@github.com:example/repo"
+}
+`
+
+	err := os.WriteFile(testFile, []byte(content), 0644)
+	require.NoError(t, err)
+
+	// Parse the file
+	file, err := parseHclWithCache(testFile)
+	assert.NoError(t, err)
+	assert.NotNil(t, file)
+
+	// Parse again - should hit cache
+	file2, err := parseHclWithCache(testFile)
+	assert.NoError(t, err)
+	assert.NotNil(t, file2)
+}
+
+// Test parseLocals and resolveLocals functions
+func TestParseLocalsFunctions(t *testing.T) {
+	// Test mergeResolvedLocals function
+	parent := ResolvedLocals{
+		AtlantisWorkflow:          "parent-workflow",
+		TerraformVersion:          "1.0.0",
+		AutoPlan:                  boolPtr(true),
+		ApplyRequirements:         []string{"approved"},
+		ExtraAtlantisDependencies: []string{"parent-dep"},
+	}
+
+	child := ResolvedLocals{
+		AtlantisWorkflow:          "child-workflow",      // Should override
+		AutoPlan:                  boolPtr(false),        // Should override
+		ExtraAtlantisDependencies: []string{"child-dep"}, // Should append
+	}
+
+	merged := mergeResolvedLocals(parent, child)
+
+	// Check overrides
+	assert.Equal(t, "child-workflow", merged.AtlantisWorkflow)
+	assert.Equal(t, "1.0.0", merged.TerraformVersion) // Should keep parent
+	assert.NotNil(t, merged.AutoPlan)
+	assert.False(t, *merged.AutoPlan) // Should be overridden to false
+
+	// Check arrays are merged properly
+	assert.Contains(t, merged.ExtraAtlantisDependencies, "parent-dep")
+	assert.Contains(t, merged.ExtraAtlantisDependencies, "child-dep")
+	assert.Contains(t, merged.ApplyRequirements, "approved")
+}
+
+// Test resolveLocals with cty values
+func TestResolveLocalsCty(t *testing.T) {
+	// Test with nil value
+	resolved, err := resolveLocals(cty.NilVal)
+	assert.NoError(t, err)
+	assert.Equal(t, ResolvedLocals{}, resolved)
+
+	// Test with actual locals values
+	localsMap := map[string]cty.Value{
+		"atlantis_workflow":          cty.StringVal("test-workflow"),
+		"atlantis_terraform_version": cty.StringVal("1.5.0"),
+		"atlantis_autoplan":          cty.BoolVal(true),
+		"atlantis_apply_requirements": cty.ListVal([]cty.Value{
+			cty.StringVal("approved"),
+			cty.StringVal("mergeable"),
+		}),
+		"extra_atlantis_dependencies": cty.ListVal([]cty.Value{
+			cty.StringVal("dep1"),
+			cty.StringVal("dep2"),
+		}),
+	}
+
+	localsValue := cty.ObjectVal(localsMap)
+	resolved, err = resolveLocals(localsValue)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "test-workflow", resolved.AtlantisWorkflow)
+	assert.Equal(t, "1.5.0", resolved.TerraformVersion)
+	assert.NotNil(t, resolved.AutoPlan)
+	assert.True(t, *resolved.AutoPlan)
+	assert.Equal(t, []string{"approved", "mergeable"}, resolved.ApplyRequirements)
+	assert.Equal(t, []string{"dep1", "dep2"}, resolved.ExtraAtlantisDependencies)
+}
+
+// Helper function used in tests (if not already defined)
+func boolPtr(b bool) *bool {
+	return &b
 }

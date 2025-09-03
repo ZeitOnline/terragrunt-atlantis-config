@@ -193,3 +193,133 @@ func TestIsLocalTerraformModuleSource(t *testing.T) {
 		})
 	}
 }
+
+func TestExtractModuleCallsFromFile_EdgeCases(t *testing.T) {
+	// Test with invalid HCL
+	tmpDir, err := os.MkdirTemp("", "hcl-edge-test")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	// Test with malformed HCL that should be skipped
+	malformedContent := `module "bad" { source = `
+	err = os.WriteFile(filepath.Join(tmpDir, "malformed.tf"), []byte(malformedContent), 0644)
+	require.NoError(t, err)
+
+	sources, err := extractModuleCallSources(tmpDir)
+	require.NoError(t, err)
+	assert.Empty(t, sources, "Should return empty list for malformed HCL")
+
+	// Test with valid but sourceless modules
+	sourcelessContent := `
+module "no_source" {
+  count = 1
+}
+
+resource "aws_instance" "example" {
+  ami = "ami-12345"
+}
+`
+	err = os.WriteFile(filepath.Join(tmpDir, "sourceless.tf"), []byte(sourcelessContent), 0644)
+	require.NoError(t, err)
+
+	sources, err = extractModuleCallSources(tmpDir)
+	require.NoError(t, err)
+	assert.Empty(t, sources, "Should return empty list for modules without source")
+}
+
+func TestParseTerraformLocalModuleSource_ErrorCases(t *testing.T) {
+	// Test with non-existent directory
+	sources, err := parseTerraformLocalModuleSource("/non/existent/path")
+	assert.NoError(t, err) // Should not error, but return empty
+	assert.Empty(t, sources)
+
+	// Test with directory containing only remote modules
+	tmpDir, err := os.MkdirTemp("", "remote-only-test")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	remoteOnlyContent := `
+module "remote1" {
+  source = "terraform-aws-modules/vpc/aws"
+  version = "~> 3.0"
+}
+
+module "remote2" {
+  source = "git::https://github.com/user/repo.git"
+}
+`
+	err = os.WriteFile(filepath.Join(tmpDir, "remote.tf"), []byte(remoteOnlyContent), 0644)
+	require.NoError(t, err)
+
+	sources, err = parseTerraformLocalModuleSource(tmpDir)
+	require.NoError(t, err)
+	assert.Empty(t, sources, "Should return empty list for remote-only modules")
+}
+
+func TestExtractModuleCallsFromFile_JsonSyntax(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "json-syntax-test")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	// Test simpler JSON structure that should work with the current implementation
+	// This test is mainly to ensure JSON files don't crash the parser
+	simpleJsonContent := `{
+  "variable": {
+    "environment": {
+      "type": "string",
+      "default": "dev"
+    }
+  },
+  "resource": {
+    "aws_instance": {
+      "web": {
+        "ami": "ami-12345",
+        "instance_type": "t2.micro"
+      }
+    }
+  }
+}`
+	err = os.WriteFile(filepath.Join(tmpDir, "simple.tf.json"), []byte(simpleJsonContent), 0644)
+	require.NoError(t, err)
+
+	sources, err := extractModuleCallSources(tmpDir)
+	require.NoError(t, err)
+
+	// This JSON doesn't contain modules, so we expect empty result
+	// The main point is that it doesn't crash when parsing JSON files
+	assert.Empty(t, sources, "Should return empty list for JSON without modules")
+
+	// Test JSON with proper module structure
+	jsonWithModuleContent := `{
+  "module": {
+    "vpc_module": {
+      "source": "./modules/vpc",
+      "cidr_block": "10.0.0.0/16"
+    },
+    "subnets_module": {
+      "source": "../shared/subnets",
+      "vpc_id": "${module.vpc_module.id}"
+    }
+  }
+}`
+	err = os.WriteFile(filepath.Join(tmpDir, "modules.tf.json"), []byte(jsonWithModuleContent), 0644)
+	require.NoError(t, err)
+
+	sources, err = extractModuleCallSources(tmpDir)
+	require.NoError(t, err)
+
+	expectedSources := []string{"./modules/vpc", "../shared/subnets"}
+	assert.ElementsMatch(t, expectedSources, sources, "Should extract module sources from JSON")
+}
+
+func TestLocalModuleSourcePrefixes(t *testing.T) {
+	// Test that all expected prefixes are included
+	expectedPrefixes := []string{"./", "../", ".\\", "..\\"}
+	assert.ElementsMatch(t, expectedPrefixes, localModuleSourcePrefixes, "Should contain all expected prefixes")
+
+	// Test Unix and Windows prefixes separately
+	assert.Contains(t, unixLocalModulePrefixes, "./")
+	assert.Contains(t, unixLocalModulePrefixes, "../")
+	assert.Contains(t, windowsLocalModulePrefixes, ".\\")
+	assert.Contains(t, windowsLocalModulePrefixes, "..\\")
+}
