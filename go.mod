@@ -154,7 +154,7 @@ require (
 	github.com/spf13/pflag v1.0.7 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.5.0 // indirect
 	github.com/terraform-linters/tflint v0.55.0 // indirect
-	github.com/ulikunitz/xz v0.5.12 // indirect
+	github.com/ulikunitz/xz v0.5.14 // indirect
 	github.com/urfave/cli v1.22.16 // indirect
 	github.com/urfave/cli/v2 v2.27.7 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
