@@ -1,0 +1,24 @@
+name: Release
+
+on:
+  push:
+    branches: [ main ]
+    
+
+permissions:
+  contents: write
+  id-token: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: zon-ubuntu-general-dind
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        name: Checkout
+      - uses: googleapis/release-please-action@7987652d64b4581673a76e33ad5e98e3dd56832f # v4
+        id: release
+        with:
+          # This requires the files "CHANGELOG.md"
+          # Other release types are documented here: https://github.com/marketplace/actions/release-please-action#release-types-supported
+          release-type: go
