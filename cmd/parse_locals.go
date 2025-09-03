@@ -7,6 +7,7 @@ package cmd
 import (
 	"fmt"
 	"path/filepath"
+	"sync"
 
 	"github.com/gruntwork-io/go-commons/errors"
 	deprecatedConfig "github.com/gruntwork-io/terragrunt/config"
@@ -14,6 +15,9 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/zclconf/go-cty/cty"
 )
+
+// Cache for parsed locals to avoid repeated parsing
+var parseLocalsCache sync.Map
 
 const (
 	jsonFileExt = ".json"

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/gruntwork-io/terragrunt/config/hclparse"
 	"github.com/stretchr/testify/assert"
@@ -622,4 +623,48 @@ func TestExtractIncludeConfigsWithJSON(t *testing.T) {
 	
 	// JSON parsing might have different behavior, just ensure it doesn't crash
 	t.Logf("JSON parsing result: includes=%d, error=%v", len(includes), err)
+}
+
+// TestCachePerformance tests that HCL parsing caching improves performance
+func TestCachePerformance(t *testing.T) {
+	// Create a temporary file
+	tmpDir, err := os.MkdirTemp("", "parse-hcl-cache-test")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	testFile := filepath.Join(tmpDir, "test.hcl")
+	content := `
+include {
+  path = "../terragrunt.hcl"
+}
+
+terraform {
+  source = "git::git@github.com:example/repo"
+}
+`
+	err = os.WriteFile(testFile, []byte(content), 0644)
+	require.NoError(t, err)
+
+	// First call - should populate cache
+	start := time.Now()
+	file1, err1 := parseHclWithCache(testFile)
+	firstCallDuration := time.Since(start)
+	require.NoError(t, err1)
+	require.NotNil(t, file1)
+
+	// Second call - should use cache and be faster
+	start = time.Now()
+	file2, err2 := parseHclWithCache(testFile)
+	secondCallDuration := time.Since(start)
+	require.NoError(t, err2)
+	require.NotNil(t, file2)
+
+	// Cache hit should be significantly faster (at least 50% faster)
+	assert.True(t, secondCallDuration < firstCallDuration/2, 
+		"Second call (%v) should be significantly faster than first call (%v)", 
+		secondCallDuration, firstCallDuration)
+
+	t.Logf("First call: %v, Second call: %v (%.1fx faster)", 
+		firstCallDuration, secondCallDuration, 
+		float64(firstCallDuration)/float64(secondCallDuration))
 }
