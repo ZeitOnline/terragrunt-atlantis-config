@@ -15,6 +15,10 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
+const (
+	jsonFileExt = ".json"
+)
+
 // ResolvedLocals are the parsed result of local values this module cares about
 type ResolvedLocals struct {
 	// The Atlantis workflow to use for some project
@@ -49,7 +53,7 @@ func parseHcl(parser *hclparse.Parser, hcl string, filename string) (file *hcl.F
 		}
 	}()
 
-	if filepath.Ext(filename) == ".json" {
+	if filepath.Ext(filename) == jsonFileExt {
 		file, parseDiagnostics := parser.ParseJSON([]byte(hcl), filename)
 		if parseDiagnostics != nil && parseDiagnostics.HasErrors() {
 			return nil, parseDiagnostics

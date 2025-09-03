@@ -22,6 +22,21 @@ import (
 	"sync"
 )
 
+const (
+	// File extensions
+	terraformFilePattern = "*.tf*"
+	tofuFilePattern      = "*.tofu*"
+
+	// Path prefixes
+	fileProtocolPrefix = "file://"
+
+	// Windows drive letter pattern
+	windowsDrivePattern = `^[A-Za-z]:`
+
+	// Terragrunt configuration files
+	terragruntConfigFile = "terragrunt.hcl"
+)
+
 // Terragrunt imports can be relative or absolute
 // This makes relative paths absolute
 func makePathAbsolute(path string, parentPath string) string {
@@ -157,7 +172,7 @@ func getDependencies(ctx *TerragruntParsingContext, path string) ([]string, erro
 		// Get deps from `dependencies` and `dependency` blocks
 		if terragruntConfig.Dependencies != nil && !ignoreDependencyBlocks {
 			for _, parsedPaths := range terragruntConfig.Dependencies.Paths {
-				dependencies = append(dependencies, filepath.Join(parsedPaths, "terragrunt.hcl"))
+				dependencies = append(dependencies, filepath.Join(parsedPaths, terragruntConfigFile))
 			}
 		}
 
@@ -178,12 +193,12 @@ func getDependencies(ctx *TerragruntParsingContext, path string) ([]string, erro
 			}
 
 			// If the normalized source begins with `file://`, or matched the Windows drive letter check, it is a local path
-			if strings.HasPrefix(parsedSource, "file://") || isWindowsPath {
+			if strings.HasPrefix(parsedSource, fileProtocolPrefix) || isWindowsPath {
 				// Remove the prefix so we have a valid filesystem path
-				parsedSource = strings.TrimPrefix(parsedSource, "file://")
+				parsedSource = strings.TrimPrefix(parsedSource, fileProtocolPrefix)
 
-				dependencies = append(dependencies, filepath.Join(parsedSource, "*.tf*"))
-				dependencies = append(dependencies, filepath.Join(parsedSource, "*.tofu*"))
+				dependencies = append(dependencies, filepath.Join(parsedSource, terraformFilePattern))
+				dependencies = append(dependencies, filepath.Join(parsedSource, tofuFilePattern))
 
 				ls, err := parseTerraformLocalModuleSource(parsedSource)
 				if err != nil {
@@ -273,7 +288,7 @@ func getDependencies(ctx *TerragruntParsingContext, path string) ([]string, erro
 			}
 		}
 
-		if filepath.Base(path) == "terragrunt.hcl" {
+		if filepath.Base(path) == terragruntConfigFile {
 			dir := filepath.Dir(path)
 
 			ls, err := parseTerraformLocalModuleSource(dir)
@@ -327,8 +342,8 @@ func createProject(ctx context.Context, sourcePath string) (*AtlantisProject, er
 	// All dependencies depend on their own .hcl file, and any tf/tofu files in their directory
 	relativeDependencies := []string{
 		"*.hcl",
-		"*.tf*",
-		"*.tofu*",
+		terraformFilePattern,
+		tofuFilePattern,
 	}
 	for _, dependencyPath := range dependencies {
 		absolutePath := dependencyPath
@@ -484,11 +499,11 @@ func createHclProject(ctx context.Context, sourcePaths []string, workingDir stri
 		// All dependencies depend on their own .hcl file, and any tf/tofu files in their directory
 		relativeDependencies := []string{
 			"*.hcl",
-			"*.tf*",
-			"*.tofu*",
+			terraformFilePattern,
+			tofuFilePattern,
 			"**/*.hcl",
-			"**/*.tf*",
-			"**/*.tofu*",
+			"**/" + terraformFilePattern,
+			"**/" + tofuFilePattern,
 		}
 		for _, dependencyPath := range dependencies {
 			absolutePath := dependencyPath
@@ -657,8 +672,8 @@ func main(cmd *cobra.Command, args []string) error {
 					if err != nil {
 						return err
 					}
-					// if project and err are nil then skip this project
-					if err == nil && project == nil {
+					// if project is nil then skip this project
+					if project == nil {
 						return nil
 					}
 
@@ -714,8 +729,8 @@ func main(cmd *cobra.Command, args []string) error {
 				if err != nil {
 					return err
 				}
-				// if project and err are nil then skip this project
-				if err == nil && project == nil {
+				// if project is nil then skip this project
+				if project == nil {
 					return nil
 				}
 				// Lock the list as only one goroutine should be writing to config.Projects at a time
