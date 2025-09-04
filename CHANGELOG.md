@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.25.1](https://github.com/ZeitOnline/terragrunt-atlantis-config/compare/v2.25.0...v2.25.1) (2025-09-04)
+
+
+### Bug Fixes
+
+* fix external dependency detection in project-hcl-files flag ([84c3516](https://github.com/ZeitOnline/terragrunt-atlantis-config/commit/84c351643322328d696274c92653aadd89b44b29))
+
 ## [2.25.0](https://github.com/ZeitOnline/terragrunt-atlantis-config/compare/v2.24.0...v2.25.0) (2025-09-03)
 
 
