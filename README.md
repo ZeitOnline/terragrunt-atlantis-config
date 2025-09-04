@@ -1,3 +1,15 @@
+# terragrunt-atlantis-config
+
+## About this Fork
+
+This project is a hard fork of [transcend-io/terragrunt-atlantis-config](https://github.com/transcend-io/terragrunt-atlantis-config) forked at v1.20.0, also incorporating changes from [piotrplenik/terragrunt-atlantis-config](https://github.com/piotrplenik/terragrunt-atlantis-config) up to v2.22.0.
+
+We made this hard fork to continue development for our in-house needs at our own pace while making it publicly available for anyone interested in using it. **Please note**: This fork is maintained primarily for internal use at ZEIT ONLINE and we do not expect or actively seek community contributions.
+
+For the original community-maintained versions, please refer to the upstream repositories mentioned above.
+
+**Development Notice**: This project actively uses GitHub Copilot and other AI coding assistants in its development process.
+
 ## What is this?
 
 [Atlantis](https://runatlantis.io) is an awesome tool for Terraform pull request automation. Each repo can have a YAML config file that defines Terraform module dependencies, so that PRs that affect dependent modules will automatically generate `terraform plan`s for those modules.
