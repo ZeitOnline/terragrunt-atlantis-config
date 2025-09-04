@@ -4,6 +4,10 @@ on:
   push:
     branches: [ main ]
 
+# Prevent concurrent releases
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -13,12 +17,60 @@ permissions:
 jobs:
   release:
     runs-on: zon-ubuntu-general-dind
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      upload_url: ${{ steps.release.outputs.upload_url }}
+      html_url: ${{ steps.release.outputs.html_url }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         name: Checkout
-      - uses: googleapis/release-please-action@7987652d64b4581673a76e33ad5e98e3dd56832f # v4
+        with:
+          fetch-depth: 0
+
+      - name: Run release-please
+        uses: googleapis/release-please-action@7987652d64b4581673a76e33ad5e98e3dd56832f # v4
         id: release
         with:
-          # This requires the files "CHANGELOG.md"
-          # Other release types are documented here: https://github.com/marketplace/actions/release-please-action#release-types-supported
-          release-type: go
+          release-type: go # this requires the a "CHANGELOG.md" file
+
+  publish:
+    needs: release
+    if: needs.release.outputs.releases_created == 'true'
+    runs-on: zon-ubuntu-general-dind
+    env:
+      GO_VERSION: "1.25"
+    steps:
+      - name: Debug release outputs
+        run: |
+          echo "Event: ${{ github.event_name }}"
+          echo "Releases created: ${{ needs.release.outputs.releases_created }}"
+          echo "Tag name: ${{ needs.release.outputs.tag_name }}"
+          echo "Upload URL: ${{ needs.release.outputs.upload_url }}"
+          echo "Release URL: ${{ needs.release.outputs.html_url }}"
+          echo "Current ref: $GITHUB_REF"
+          echo "Current SHA: $GITHUB_SHA"
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        name: Checkout
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.release.outputs.tag_name }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "^${{ env.GO_VERSION }}"
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Install dependencies
+        run: go get .
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: '~> v2'
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
