@@ -505,6 +505,15 @@ projects:
     - '*.hcl'
     - '*.tf*'
     - '*.tofu*'
+    - ../stack.hcl
+    - ../../_env/cluster/fargate.hcl
+  dir: proj_hcl_with_external_deps/my-stack/nested
+- autoplan:
+    enabled: false
+    when_modified:
+    - '*.hcl'
+    - '*.tf*'
+    - '*.tofu*'
     - '**/*.hcl'
     - '**/*.tf*'
     - '**/*.tofu*'
