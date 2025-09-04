@@ -13,6 +13,13 @@ import (
 	"golang.org/x/sync/singleflight"
 )
 
+// Test directory constants
+const (
+	testArtifactsDir     = "../test/artifacts"
+	testReferenceOutputs = "../test/reference_outputs"
+	testFixturesDir      = "../test/fixtures"
+)
+
 // Resets all flag values to their defaults in between tests
 func resetForRun() error {
 	pwd, err := os.Getwd()
@@ -50,8 +57,8 @@ func resetForRun() error {
 	return nil
 }
 
-// Runs a test, asserting the output produced matches a golden file
-func runTest(t *testing.T, goldenFile string, args []string) {
+// Runs a test, asserting the output produced matches a reference output file
+func runTest(t *testing.T, referenceFile string, args []string) {
 	err := resetForRun()
 	if err != nil {
 		t.Error("Failed to reset default flags")
@@ -59,7 +66,7 @@ func runTest(t *testing.T, goldenFile string, args []string) {
 	}
 
 	randomInt := rand.Int()
-	filename := filepath.Join("test_artifacts", fmt.Sprintf("%d.yaml", randomInt))
+	filename := filepath.Join(testArtifactsDir, fmt.Sprintf("%d.yaml", randomInt))
 	defer os.Remove(filename)
 
 	allArgs := append([]string{
@@ -76,95 +83,95 @@ func runTest(t *testing.T, goldenFile string, args []string) {
 		return
 	}
 
-	goldenContentsBytes, err := os.ReadFile(goldenFile)
-	goldenContents := &AtlantisConfig{}
-	yaml.Unmarshal(goldenContentsBytes, goldenContents)
+	referenceContentsBytes, err := os.ReadFile(referenceFile)
+	referenceContents := &AtlantisConfig{}
+	yaml.Unmarshal(referenceContentsBytes, referenceContents)
 	if err != nil {
-		t.Error("Failed to read golden file")
+		t.Error("Failed to read reference output file")
 		return
 	}
 
-	assert.Equal(t, goldenContents, content)
+	assert.Equal(t, referenceContents, content)
 }
 
 func TestSettingRoot(t *testing.T) {
-	runTest(t, filepath.Join("golden", "basic.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "basic.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "basic_module"),
+		filepath.Join(testFixturesDir, "basic_module"),
 	})
 }
 
 func TestRootPathBeingAbsolute(t *testing.T) {
-	parent, err := filepath.Abs(filepath.Join("..", "test_examples", "basic_module"))
+	parent, err := filepath.Abs(filepath.Join(testFixturesDir, "basic_module"))
 	if err != nil {
 		t.Error("Failed to find parent directory")
 	}
 
-	runTest(t, filepath.Join("golden", "basic.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "basic.yaml"), []string{
 		"--root",
 		parent,
 	})
 }
 
 func TestRootPathHavingTrailingSlash(t *testing.T) {
-	runTest(t, filepath.Join("golden", "basic.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "basic.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "basic_module") + string(filepath.Separator),
+		filepath.Join(testFixturesDir, "basic_module") + string(filepath.Separator),
 	})
 }
 
 func TestWithNoTerragruntFiles(t *testing.T) {
-	runTest(t, filepath.Join("golden", "empty.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "empty.yaml"), []string{
 		"--root",
 		".", // There are no terragrunt files in this directory
-		filepath.Join("..", "test_examples", "no_modules"),
+		filepath.Join(testFixturesDir, "no_modules"),
 	})
 }
 
 func TestWithParallelizationDisabled(t *testing.T) {
-	runTest(t, filepath.Join("golden", "noParallel.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "noParallel.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "basic_module"),
+		filepath.Join(testFixturesDir, "basic_module"),
 		"--parallel=false",
 	})
 }
 
 func TestIgnoringParentTerragrunt(t *testing.T) {
-	runTest(t, filepath.Join("golden", "withoutParent.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "withoutParent.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "with_parent"),
+		filepath.Join(testFixturesDir, "with_parent"),
 	})
 }
 
 func TestNotIgnoringParentTerragrunt(t *testing.T) {
-	runTest(t, filepath.Join("golden", "withParent.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "withParent.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "with_parent"),
+		filepath.Join(testFixturesDir, "with_parent"),
 		"--ignore-parent-terragrunt=false",
 	})
 }
 
 func TestEnablingAutoplan(t *testing.T) {
-	runTest(t, filepath.Join("golden", "withAutoplan.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "withAutoplan.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "basic_module"),
+		filepath.Join(testFixturesDir, "basic_module"),
 		"--autoplan",
 	})
 }
 
 func TestSettingWorkflowName(t *testing.T) {
-	runTest(t, filepath.Join("golden", "namedWorkflow.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "namedWorkflow.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "basic_module"),
+		filepath.Join(testFixturesDir, "basic_module"),
 		"--workflow",
 		"someWorkflow",
 	})
 }
 
 func TestExtraDeclaredDependencies(t *testing.T) {
-	runTest(t, filepath.Join("golden", "extra_dependencies.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "extra_dependencies.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "extra_dependency"),
+		filepath.Join(testFixturesDir, "extra_dependency"),
 	})
 }
 
@@ -178,7 +185,7 @@ func TestNonStringErrorOnExtraDeclaredDependencies(t *testing.T) {
 	rootCmd.SetArgs([]string{
 		"generate",
 		"--root",
-		filepath.Join("..", "test_examples_errors", "extra_dependency_error"),
+		filepath.Join("..", "test/fixtures_errors", "extra_dependency_error"),
 	})
 	err = rootCmd.Execute()
 
@@ -191,45 +198,45 @@ func TestNonStringErrorOnExtraDeclaredDependencies(t *testing.T) {
 }
 
 func TestLocalTerraformModuleSource(t *testing.T) {
-	runTest(t, filepath.Join("golden", "local_terraform_module.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "local_terraform_module.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "local_terraform_module_source"),
+		filepath.Join(testFixturesDir, "local_terraform_module_source"),
 	})
 }
 
 func TestLocalTerraformAbsModuleSource(t *testing.T) {
-	runTest(t, filepath.Join("golden", "local_terraform_abs_module.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "local_terraform_abs_module.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "local_terraform_abs_module_source"),
+		filepath.Join(testFixturesDir, "local_terraform_abs_module_source"),
 	})
 }
 
 func TestLocalTfModuleSource(t *testing.T) {
-	runTest(t, filepath.Join("golden", "local_tf_module.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "local_tf_module.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "local_tf_module_source"),
+		filepath.Join(testFixturesDir, "local_tf_module_source"),
 	})
 }
 
 func TestTerragruntDependencies(t *testing.T) {
-	runTest(t, filepath.Join("golden", "terragrunt_dependency.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "terragrunt_dependency.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "terragrunt_dependency"),
+		filepath.Join(testFixturesDir, "terragrunt_dependency"),
 	})
 }
 
 func TestIgnoringTerragruntDependencies(t *testing.T) {
-	runTest(t, filepath.Join("golden", "terragrunt_dependency_ignored.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "terragrunt_dependency_ignored.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "terragrunt_dependency"),
+		filepath.Join(testFixturesDir, "terragrunt_dependency"),
 		"--ignore-dependency-blocks",
 	})
 }
 
 func TestCustomWorkflowName(t *testing.T) {
-	runTest(t, filepath.Join("golden", "different_workflow_names.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "different_workflow_names.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "different_workflow_names"),
+		filepath.Join(testFixturesDir, "different_workflow_names"),
 	})
 }
 
@@ -237,99 +244,99 @@ func TestCustomWorkflowName(t *testing.T) {
 // Sometimes it is possible to have parent files that only are runnable when included
 // into child modules.
 func TestUnparseableParent(t *testing.T) {
-	runTest(t, filepath.Join("golden", "invalid_parent_module.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "invalid_parent_module.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "invalid_parent_module"),
+		filepath.Join(testFixturesDir, "invalid_parent_module"),
 	})
 }
 
 func TestWithWorkspaces(t *testing.T) {
-	runTest(t, filepath.Join("golden", "withWorkspace.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "withWorkspace.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "basic_module"),
+		filepath.Join(testFixturesDir, "basic_module"),
 		"--create-workspace",
 	})
 }
 
 func TestWithProjectNames(t *testing.T) {
-	runTest(t, filepath.Join("golden", "withProjectName.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "withProjectName.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "invalid_parent_module"),
+		filepath.Join(testFixturesDir, "invalid_parent_module"),
 		"--create-project-name",
 	})
 }
 
 func TestMergingLocalDependenciesFromParent(t *testing.T) {
-	runTest(t, filepath.Join("golden", "mergeParentDependencies.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "mergeParentDependencies.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "parent_with_extra_deps"),
+		filepath.Join(testFixturesDir, "parent_with_extra_deps"),
 	})
 }
 
 func TestWorkflowFromParentInLocals(t *testing.T) {
-	runTest(t, filepath.Join("golden", "parentDefinedWorkflow.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "parentDefinedWorkflow.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "parent_with_workflow_local"),
+		filepath.Join(testFixturesDir, "parent_with_workflow_local"),
 	})
 }
 
 func TestChildWorkflowOverridesParentWorkflow(t *testing.T) {
-	runTest(t, filepath.Join("golden", "parentAndChildDefinedWorkflow.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "parentAndChildDefinedWorkflow.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "child_and_parent_specify_workflow"),
+		filepath.Join(testFixturesDir, "child_and_parent_specify_workflow"),
 	})
 }
 
 func TestExtraArguments(t *testing.T) {
-	runTest(t, filepath.Join("golden", "extraArguments.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "extraArguments.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "extra_arguments"),
+		filepath.Join(testFixturesDir, "extra_arguments"),
 	})
 }
 
 func TestInfrastructureLive(t *testing.T) {
-	runTest(t, filepath.Join("golden", "infrastructureLive.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "infrastructureLive.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "terragrunt-infrastructure-live-example"),
+		filepath.Join(testFixturesDir, "terragrunt-infrastructure-live-example"),
 	})
 }
 
 func TestModulesWithNoTerraformSourceDefinitions(t *testing.T) {
-	runTest(t, filepath.Join("golden", "no_terraform_blocks.yml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "no_terraform_blocks.yml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "no_terraform_blocks"),
+		filepath.Join(testFixturesDir, "no_terraform_blocks"),
 		"--parallel",
 		"--autoplan",
 	})
 }
 
 func TestInfrastructureMutliAccountsVPCRoute53TGWCascading(t *testing.T) {
-	runTest(t, filepath.Join("golden", "multi_accounts_vpc_route53_tgw.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "multi_accounts_vpc_route53_tgw.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "multi_accounts_vpc_route53_tgw"),
+		filepath.Join(testFixturesDir, "multi_accounts_vpc_route53_tgw"),
 		"--cascade-dependencies",
 	})
 }
 
 func TestAutoPlan(t *testing.T) {
-	runTest(t, filepath.Join("golden", "autoplan.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "autoplan.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "autoplan"),
+		filepath.Join(testFixturesDir, "autoplan"),
 		"--autoplan=false",
 	})
 }
 
 func TestSkippingModules(t *testing.T) {
-	runTest(t, filepath.Join("golden", "skip.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "skip.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "skip"),
+		filepath.Join(testFixturesDir, "skip"),
 	})
 }
 
 func TestTerraformVersionConfig(t *testing.T) {
-	runTest(t, filepath.Join("golden", "terraform_version.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "terraform_version.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "terraform_version"),
+		filepath.Join(testFixturesDir, "terraform_version"),
 		"--terraform-version", "0.14.9001",
 	})
 }
@@ -342,7 +349,7 @@ func TestPreservingOldWorkflows(t *testing.T) {
 	}
 
 	randomInt := rand.Int()
-	filename := filepath.Join("test_artifacts", fmt.Sprintf("%d.yaml", randomInt))
+	filename := filepath.Join(testArtifactsDir, fmt.Sprintf("%d.yaml", randomInt))
 	defer os.Remove(filename)
 
 	// Create an existing file to simulate an existing atlantis.yaml file
@@ -362,21 +369,21 @@ func TestPreservingOldWorkflows(t *testing.T) {
 		"--output",
 		filename,
 		"--root",
-		filepath.Join("..", "test_examples", "basic_module"),
+		filepath.Join(testFixturesDir, "basic_module"),
 	})
 	if err != nil {
 		t.Error("Failed to read file")
 		return
 	}
 
-	goldenContents, err := os.ReadFile(filepath.Join("golden", "oldWorkflowsPreserved.yaml"))
+	referenceContents, err := os.ReadFile(filepath.Join(testReferenceOutputs, "oldWorkflowsPreserved.yaml"))
 	if err != nil {
-		t.Error("Failed to read golden file")
+		t.Error("Failed to read reference output file")
 		return
 	}
 
-	if string(content) != string(goldenContents) {
-		t.Errorf("Content did not match golden file.\n\nExpected Content: %s\n\nContent: %s", string(goldenContents), string(content))
+	if string(content) != string(referenceContents) {
+		t.Errorf("Content did not match reference output file.\n\nExpected Content: %s\n\nContent: %s", string(referenceContents), string(content))
 	}
 }
 
@@ -388,7 +395,7 @@ func TestPreservingOldProjects(t *testing.T) {
 	}
 
 	randomInt := rand.Int()
-	filename := filepath.Join("test_artifacts", fmt.Sprintf("%d.yaml", randomInt))
+	filename := filepath.Join(testArtifactsDir, fmt.Sprintf("%d.yaml", randomInt))
 	defer os.Remove(filename)
 
 	// Create an existing file to simulate an existing atlantis.yaml file
@@ -409,90 +416,90 @@ func TestPreservingOldProjects(t *testing.T) {
 		"--output",
 		filename,
 		"--root",
-		filepath.Join("..", "test_examples", "basic_module"),
+		filepath.Join(testFixturesDir, "basic_module"),
 	})
 	if err != nil {
 		t.Error("Failed to read file")
 		return
 	}
 
-	goldenContents, err := os.ReadFile(filepath.Join("golden", "oldProjectsPreserved.yaml"))
+	referenceContents, err := os.ReadFile(filepath.Join(testReferenceOutputs, "oldProjectsPreserved.yaml"))
 	if err != nil {
-		t.Error("Failed to read golden file")
+		t.Error("Failed to read reference output file")
 		return
 	}
 
-	if string(content) != string(goldenContents) {
-		t.Errorf("Content did not match golden file.\n\nExpected Content: %s\n\nContent: %s", string(goldenContents), string(content))
+	if string(content) != string(referenceContents) {
+		t.Errorf("Content did not match reference output file.\n\nExpected Content: %s\n\nContent: %s", string(referenceContents), string(content))
 	}
 }
 
 func TestEnablingAutomerge(t *testing.T) {
-	runTest(t, filepath.Join("golden", "withAutomerge.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "withAutomerge.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "basic_module"),
+		filepath.Join(testFixturesDir, "basic_module"),
 		"--automerge",
 	})
 }
 
 func TestChainedDependencies(t *testing.T) {
-	runTest(t, filepath.Join("golden", "chained_dependency.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "chained_dependency.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "chained_dependencies"),
+		filepath.Join(testFixturesDir, "chained_dependencies"),
 		"--cascade-dependencies",
 	})
 }
 
 func TestChainedDependenciesHiddenBehindFlag(t *testing.T) {
-	runTest(t, filepath.Join("golden", "chained_dependency_no_flag.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "chained_dependency_no_flag.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "chained_dependencies"),
+		filepath.Join(testFixturesDir, "chained_dependencies"),
 		"--cascade-dependencies=false",
 	})
 }
 
 func TestApplyRequirementsLocals(t *testing.T) {
-	runTest(t, filepath.Join("golden", "apply_overrides.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "apply_overrides.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "apply_requirements_overrides"),
+		filepath.Join(testFixturesDir, "apply_requirements_overrides"),
 	})
 }
 
 func TestApplyRequirementsFlag(t *testing.T) {
-	runTest(t, filepath.Join("golden", "apply_overrides_flag.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "apply_overrides_flag.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "basic_module"),
+		filepath.Join(testFixturesDir, "basic_module"),
 		"--apply-requirements=approved,mergeable",
 	})
 }
 
 func TestFilterFlagWithInfraLiveProd(t *testing.T) {
-	runTest(t, filepath.Join("golden", "filterInfraLiveProd.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "filterInfraLiveProd.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "terragrunt-infrastructure-live-example"),
+		filepath.Join(testFixturesDir, "terragrunt-infrastructure-live-example"),
 		"--filter",
-		filepath.Join("..", "test_examples", "terragrunt-infrastructure-live-example", "prod"),
+		filepath.Join(testFixturesDir, "terragrunt-infrastructure-live-example", "prod"),
 	})
 }
 
 func TestFilterFlagWithInfraLiveNonProd(t *testing.T) {
-	runTest(t, filepath.Join("golden", "filterInfraLiveNonProd.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "filterInfraLiveNonProd.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "terragrunt-infrastructure-live-example"),
+		filepath.Join(testFixturesDir, "terragrunt-infrastructure-live-example"),
 		"--filter",
-		filepath.Join("..", "test_examples", "terragrunt-infrastructure-live-example", "non-prod"),
+		filepath.Join(testFixturesDir, "terragrunt-infrastructure-live-example", "non-prod"),
 	})
 }
 
 func TestFilterFlagWithInfraLiveProdAndNonProd(t *testing.T) {
-	runTest(t, filepath.Join("golden", "filterInfraLiveProdAndNonProd.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "filterInfraLiveProdAndNonProd.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "terragrunt-infrastructure-live-example"),
+		filepath.Join(testFixturesDir, "terragrunt-infrastructure-live-example"),
 		"--filter",
 		strings.Join(
 			[]string{
-				filepath.Join("..", "test_examples", "terragrunt-infrastructure-live-example", "non-prod"),
-				filepath.Join("..", "test_examples", "terragrunt-infrastructure-live-example", "prod"),
+				filepath.Join(testFixturesDir, "terragrunt-infrastructure-live-example", "non-prod"),
+				filepath.Join(testFixturesDir, "terragrunt-infrastructure-live-example", "prod"),
 			},
 			",",
 		),
@@ -500,110 +507,110 @@ func TestFilterFlagWithInfraLiveProdAndNonProd(t *testing.T) {
 }
 
 func TestFilterGlobFlagWithInfraLiveMySql(t *testing.T) {
-	runTest(t, filepath.Join("golden", "filterGlobInfraLiveMySQL.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "filterGlobInfraLiveMySQL.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "terragrunt-infrastructure-live-example"),
+		filepath.Join(testFixturesDir, "terragrunt-infrastructure-live-example"),
 		"--filter",
-		filepath.Join("..", "test_examples", "terragrunt-infrastructure-live-example", "*", "*", "*", "mysql"),
+		filepath.Join(testFixturesDir, "terragrunt-infrastructure-live-example", "*", "*", "*", "mysql"),
 	})
 }
 
 func TestMultipleIncludes(t *testing.T) {
-	runTest(t, filepath.Join("golden", "multiple_includes.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "multiple_includes.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "multiple_includes"),
+		filepath.Join(testFixturesDir, "multiple_includes"),
 		"--terraform-version", "0.14.9001",
 	})
 }
 
 func TestRemoteModuleSourceBitbucket(t *testing.T) {
-	runTest(t, filepath.Join("golden", "basic.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "basic.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "remote_module_source_bitbucket"),
+		filepath.Join(testFixturesDir, "remote_module_source_bitbucket"),
 	})
 }
 
 func TestRemoteModuleSourceGCS(t *testing.T) {
-	runTest(t, filepath.Join("golden", "basic.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "basic.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "remote_module_source_gcs"),
+		filepath.Join(testFixturesDir, "remote_module_source_gcs"),
 	})
 }
 
 func TestRemoteModuleSourceGitHTTPS(t *testing.T) {
-	runTest(t, filepath.Join("golden", "basic.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "basic.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "remote_module_source_git_https"),
+		filepath.Join(testFixturesDir, "remote_module_source_git_https"),
 	})
 }
 
 func TestRemoteModuleSourceGitSCPLike(t *testing.T) {
-	runTest(t, filepath.Join("golden", "basic.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "basic.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "remote_module_source_git_scp_like"),
+		filepath.Join(testFixturesDir, "remote_module_source_git_scp_like"),
 	})
 }
 
 func TestRemoteModuleSourceGitSSH(t *testing.T) {
-	runTest(t, filepath.Join("golden", "basic.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "basic.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "remote_module_source_git_ssh"),
+		filepath.Join(testFixturesDir, "remote_module_source_git_ssh"),
 	})
 }
 
 func TestRemoteModuleSourceGithubHTTPS(t *testing.T) {
-	runTest(t, filepath.Join("golden", "basic.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "basic.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "remote_module_source_github_https"),
+		filepath.Join(testFixturesDir, "remote_module_source_github_https"),
 	})
 }
 
 func TestRemoteModuleSourceGithubSSH(t *testing.T) {
-	runTest(t, filepath.Join("golden", "basic.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "basic.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "remote_module_source_github_ssh"),
+		filepath.Join(testFixturesDir, "remote_module_source_github_ssh"),
 	})
 }
 
 func TestRemoteModuleSourceHTTP(t *testing.T) {
-	runTest(t, filepath.Join("golden", "basic.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "basic.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "remote_module_source_http"),
+		filepath.Join(testFixturesDir, "remote_module_source_http"),
 	})
 }
 
 func TestRemoteModuleSourceHTTPS(t *testing.T) {
-	runTest(t, filepath.Join("golden", "basic.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "basic.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "remote_module_source_https"),
+		filepath.Join(testFixturesDir, "remote_module_source_https"),
 	})
 }
 
 func TestRemoteModuleSourceMercurial(t *testing.T) {
-	runTest(t, filepath.Join("golden", "basic.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "basic.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "remote_module_source_mercurial"),
+		filepath.Join(testFixturesDir, "remote_module_source_mercurial"),
 	})
 }
 
 func TestRemoteModuleSourceS3(t *testing.T) {
-	runTest(t, filepath.Join("golden", "basic.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "basic.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "remote_module_source_s3"),
+		filepath.Join(testFixturesDir, "remote_module_source_s3"),
 	})
 }
 
 func TestRemoteModuleSourceTerraformRegistry(t *testing.T) {
-	runTest(t, filepath.Join("golden", "basic.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "basic.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "remote_module_source_terraform_registry"),
+		filepath.Join(testFixturesDir, "remote_module_source_terraform_registry"),
 	})
 }
 
 func TestEnvHCLProjectsNoChilds(t *testing.T) {
-	runTest(t, filepath.Join("golden", "envhcl_nochilds.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "envhcl_nochilds.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples"),
+		testFixturesDir,
 		"--project-hcl-files=env.hcl",
 		"--create-hcl-project-childs=false",
 		"--create-hcl-project-external-childs=false",
@@ -611,9 +618,9 @@ func TestEnvHCLProjectsNoChilds(t *testing.T) {
 }
 
 func TestEnvHCLProjectsSubChilds(t *testing.T) {
-	runTest(t, filepath.Join("golden", "envhcl_subchilds.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "envhcl_subchilds.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples"),
+		testFixturesDir,
 		"--project-hcl-files=env.hcl",
 		"--create-hcl-project-childs=true",
 		"--create-hcl-project-external-childs=false",
@@ -621,9 +628,9 @@ func TestEnvHCLProjectsSubChilds(t *testing.T) {
 }
 
 func TestEnvHCLProjectsExternalChilds(t *testing.T) {
-	runTest(t, filepath.Join("golden", "envhcl_externalchilds.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "envhcl_externalchilds.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples"),
+		testFixturesDir,
 		"--project-hcl-files=env.hcl",
 		"--create-hcl-project-childs=false",
 		"--create-hcl-project-external-childs=true",
@@ -631,9 +638,9 @@ func TestEnvHCLProjectsExternalChilds(t *testing.T) {
 }
 
 func TestEnvHCLProjectsAllChilds(t *testing.T) {
-	runTest(t, filepath.Join("golden", "envhcl_allchilds.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "envhcl_allchilds.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples"),
+		testFixturesDir,
 		"--project-hcl-files=env.hcl",
 		"--create-hcl-project-childs=true",
 		"--create-hcl-project-external-childs=true",
@@ -641,33 +648,33 @@ func TestEnvHCLProjectsAllChilds(t *testing.T) {
 }
 
 func TestEnvHCLProjectMarker(t *testing.T) {
-	runTest(t, filepath.Join("golden", "project_marker.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "project_marker.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "project_hcl_with_project_marker"),
+		filepath.Join(testFixturesDir, "project_hcl_with_project_marker"),
 		"--project-hcl-files=env.hcl",
 		"--use-project-markers=true",
 	})
 }
 
 func TestWithOriginalDir(t *testing.T) {
-	runTest(t, filepath.Join("golden", "withOriginalDir.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "withOriginalDir.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "with_original_dir"),
+		filepath.Join(testFixturesDir, "with_original_dir"),
 	})
 }
 
 func TestWithExecutionOrderGroups(t *testing.T) {
-	runTest(t, filepath.Join("golden", "withExecutionOrderGroups.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "withExecutionOrderGroups.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "chained_dependencies"),
+		filepath.Join(testFixturesDir, "chained_dependencies"),
 		"--execution-order-groups",
 	})
 }
 
 func TestWithExecutionOrderGroupsAndDependsOn(t *testing.T) {
-	runTest(t, filepath.Join("golden", "withExecutionOrderGroupsAndDependsOn.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "withExecutionOrderGroupsAndDependsOn.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "chained_dependencies"),
+		filepath.Join(testFixturesDir, "chained_dependencies"),
 		"--execution-order-groups",
 		"--depends-on",
 		"--create-project-name",
@@ -675,9 +682,9 @@ func TestWithExecutionOrderGroupsAndDependsOn(t *testing.T) {
 }
 
 func TestWithDependsOn(t *testing.T) {
-	runTest(t, filepath.Join("golden", "withDependsOn.yaml"), []string{
+	runTest(t, filepath.Join(testReferenceOutputs, "withDependsOn.yaml"), []string{
 		"--root",
-		filepath.Join("..", "test_examples", "chained_dependencies"),
+		filepath.Join(testFixturesDir, "chained_dependencies"),
 		"--depends-on",
 		"--create-project-name",
 	})

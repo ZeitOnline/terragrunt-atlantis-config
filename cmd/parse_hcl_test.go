@@ -504,7 +504,7 @@ terraform {
 }
 
 func TestParseModuleWithRealFiles(t *testing.T) {
-	// Test with actual example files from the test_examples directory
+	// Test with actual example files from the test/fixtures directory
 	tests := []struct {
 		name                 string
 		examplePath          string
@@ -534,7 +534,7 @@ func TestParseModuleWithRealFiles(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Get the full path to the test example
-			testFilePath := filepath.Join("../test_examples", tt.examplePath)
+			testFilePath := filepath.Join("../test/fixtures", tt.examplePath)
 
 			// Check if the file exists (skip test if not)
 			if _, err := os.Stat(testFilePath); os.IsNotExist(err) {
