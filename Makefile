@@ -1,8 +1,8 @@
 .PHONY: test
 test: ## Run tests
-	mkdir -p cmd/test_artifacts
+	mkdir -p test/artifacts
 	go test -v ./...
-	rm -rf cmd/test_artifacts
+	rm -rf test/artifacts
 
 .PHONY: build
 build: test ## Build for current platform

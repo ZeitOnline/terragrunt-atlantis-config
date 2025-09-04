@@ -1,12 +1,3 @@
-<p align="center">
-  <img alt="Terragrunt Atlantis Config by Transcend" src="https://user-images.githubusercontent.com/7354176/78756035-f9863480-792e-11ea-96d3-d4ffe50e0269.png"/>
-</p>
-<h1 align="center">Terragrunt Atlantis Config</h1>
-<p align="center">
-  <strong>Generate Atlantis Config for Terragrunt projects.</strong>
-</p>
-<br />
-
 ## What is this?
 
 [Atlantis](https://runatlantis.io) is an awesome tool for Terraform pull request automation. Each repo can have a YAML config file that defines Terraform module dependencies, so that PRs that affect dependent modules will automatically generate `terraform plan`s for those modules.
@@ -235,7 +226,8 @@ make clean     # Clean build artifacts
 make help      # Show all available commands
 
 # Using Go directly (manual approach)
-mkdir -p cmd/test_artifacts && go test -v ./... && rm -rf cmd/test_artifacts
+# Run tests (creates/cleans test artifacts automatically)
+mkdir -p test/artifacts && go test -v ./... && rm -rf test/artifacts
 
 # Using GoReleaser directly
 goreleaser build --snapshot --clean --single-target  # Tests + build current platform

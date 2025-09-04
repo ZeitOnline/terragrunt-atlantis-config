@@ -5,9 +5,9 @@ project_name: terragrunt-atlantis-config
 before:
   hooks:
     - go mod tidy
-    - mkdir -p cmd/test_artifacts
+    - mkdir -p test/artifacts
     - go test -v ./...
-    - rm -rf cmd/test_artifacts
+    - rm -rf test/artifacts
 
 builds:
   - env:
