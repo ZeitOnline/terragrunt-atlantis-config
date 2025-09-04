@@ -607,6 +607,17 @@ func TestRemoteModuleSourceTerraformRegistry(t *testing.T) {
 	})
 }
 
+func TestEnvHCLProjectsWithDeps(t *testing.T) {
+	runTest(t, filepath.Join(testReferenceOutputs, "proj_hcl_with_external_deps.yaml"), []string{
+		"--root",
+		filepath.Join(testFixturesDir, "proj_hcl_with_external_deps", "my-stack"),
+		"--cascade-dependencies",
+		"--project-hcl-files=stack.hcl",
+		"--create-hcl-project-childs=false",
+		"--create-hcl-project-external-childs=false",
+	})
+}
+
 func TestEnvHCLProjectsNoChilds(t *testing.T) {
 	runTest(t, filepath.Join(testReferenceOutputs, "envhcl_nochilds.yaml"), []string{
 		"--root",
