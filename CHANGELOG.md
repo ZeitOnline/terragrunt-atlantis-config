@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.26.0](https://github.com/ZeitOnline/terragrunt-atlantis-config/compare/v2.25.1...v2.26.0) (2026-05-13)
+
+
+### Features
+
+* add renovate config ([432de59](https://github.com/ZeitOnline/terragrunt-atlantis-config/commit/432de59120026b60ce6cc46e54218310b17d5b4b))
+
 ## [2.25.1](https://github.com/ZeitOnline/terragrunt-atlantis-config/compare/v2.25.0...v2.25.1) (2025-09-04)
 
 
