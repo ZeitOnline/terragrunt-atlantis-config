@@ -5,7 +5,7 @@ go 1.25
 require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/gruntwork-io/go-commons v0.17.2
-	github.com/gruntwork-io/terragrunt v0.86.2
+	github.com/gruntwork-io/terragrunt v0.99.5
 	github.com/hashicorp/go-getter v1.7.9
 	github.com/hashicorp/hcl/v2 v2.24.0
 	github.com/sirupsen/logrus v1.9.3
