@@ -9,7 +9,7 @@ require (
 	github.com/hashicorp/go-getter v1.7.9
 	github.com/hashicorp/hcl/v2 v2.24.0
 	github.com/sirupsen/logrus v1.9.3
-	github.com/spf13/cobra v1.9.1
+	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.10.0
 	github.com/zclconf/go-cty v1.16.4
 	golang.org/x/sync v0.16.0
@@ -151,7 +151,7 @@ require (
 	github.com/puzpuzpuz/xsync/v3 v3.5.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
-	github.com/spf13/pflag v1.0.7 // indirect
+	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.5.0 // indirect
 	github.com/terraform-linters/tflint v0.55.0 // indirect
 	github.com/ulikunitz/xz v0.5.14 // indirect
