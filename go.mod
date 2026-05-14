@@ -1,6 +1,6 @@
 module github.com/transcend-io/terragrunt-atlantis-config
 
-go 1.25
+go 1.25.0
 
 require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
@@ -12,7 +12,7 @@ require (
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 	github.com/zclconf/go-cty v1.16.4
-	golang.org/x/sync v0.16.0
+	golang.org/x/sync v0.20.0
 )
 
 require (
