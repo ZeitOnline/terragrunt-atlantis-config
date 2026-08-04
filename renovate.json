@@ -1,6 +1,29 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
 
-  "dependencyDashboard": true,
-  "schedule": ["before 5am every weekday"]
+  "extends": [
+    "github>zeitonline/renovate-config//ops/default",
+    "github>zeitonline/renovate-config//ops/ghaAutomergeNonMajor",
+    "github>zeitonline/renovate-config//ops/goDefault",
+    "github>zeitonline/renovate-config//ops/preCommitDefault",
+    "github>zeitonline/renovate-config//ops/maintenanceDaySchedule"
+  ],
+
+  "schedule": [
+    "before 5am every weekday"
+  ],
+
+  "packageRules": [
+    {
+      "description": "test/fixtures holds terraform and terragrunt files used as test input, not dependencies of this repo; bumping them changes what the tests assert",
+      "matchManagers": [
+        "terraform",
+        "terragrunt"
+      ],
+      "matchFileNames": [
+        "test/fixtures/**"
+      ],
+      "enabled": false
+    }
+  ]
 }
