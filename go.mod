@@ -8,9 +8,9 @@ require (
 	github.com/gruntwork-io/terragrunt v0.86.2
 	github.com/hashicorp/go-getter v1.7.9
 	github.com/hashicorp/hcl/v2 v2.24.0
-	github.com/sirupsen/logrus v1.9.3
+	github.com/sirupsen/logrus v1.10.2
 	github.com/spf13/cobra v1.9.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.12.1
 	github.com/zclconf/go-cty v1.16.4
 	golang.org/x/sync v0.16.0
 )
@@ -178,6 +178,7 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.37.0 // indirect
 	go.opentelemetry.io/otel/trace v1.37.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.7.0 // indirect
+	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/crypto v0.41.0 // indirect
 	golang.org/x/exp v0.0.0-20250531010427-b6e5de432a8b // indirect
 	golang.org/x/mod v0.27.0 // indirect
